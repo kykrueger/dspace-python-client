@@ -145,6 +145,24 @@ class Item:
         self.uuid = response["uuid"]
         self.withdrawn = response["withdrawn"]
 
+    def get_metadata_entries(self, client: DSpaceClient) -> list[MetadataEntry]:
+        """ 
+        Metadata of an Item may contain duplicates of keys
+        for this reason it is loaded in a list instead of a dict.
+        Reduction of the metadata to a dict or list of one entry per key
+        is up to the API user.
+        """
+        response = client.get(f"/items/{self.uuid}/metadata").json()
+        entries = [MetadataEntry(x["key"], x["language"], x["value"]) for x in response]
+        return entries
+
+    def get_doi(self, client: DSpaceClient) -> Optional[str]:
+        entries = self.get_metadata_entries(client)
+        for entry in entries:
+            if entry.key == "dc.identifier.doi":
+                return entry.value
+        return None
+
 
 class MetadataEntry:
     """Class representing a `DSpace MetadataEntry object`_.
@@ -168,6 +186,9 @@ class MetadataEntry:
         self.key = key
         self.value = value
         self.language = language
+
+    def __str__(self) -> str:
+        return str(self.to_dict())
 
     def to_dict(self) -> dict:
         """Method to convert the MetadataEntry object to a dict.

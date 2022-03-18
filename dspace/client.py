@@ -35,11 +35,13 @@ class DSpaceClient:
         base_url: str,
         accept_header: str = "application/json",
         timeout: float = 3.0,
+        verify: bool = True,
     ):
         self.base_url: str = base_url.rstrip("/")
         self.headers: Dict[str, str] = {"accept": accept_header}
         self.timeout: float = timeout
         self.cookies: dict = {}
+        self.verify: bool = verify
         logger.debug(
             f"Client initialized with params base_url={self.base_url}, "
             f"accept_header={self.headers}, "
@@ -75,7 +77,7 @@ class DSpaceClient:
         """
         url = self.base_url + endpoint
         response = requests.delete(
-            url, cookies=self.cookies, headers=self.headers, timeout=self.timeout
+            url, cookies=self.cookies, headers=self.headers, timeout=self.timeout, verify=self.verify,
         )
         response.raise_for_status()
         return response
@@ -107,6 +109,7 @@ class DSpaceClient:
             headers=self.headers,
             params=params,
             timeout=self.timeout,
+            verify=self.verify,
         )
         response.raise_for_status()
         return response
@@ -190,6 +193,7 @@ class DSpaceClient:
             json=json,
             params=params,
             timeout=self.timeout,
+            verify=self.verify,
         )
         response.raise_for_status()
         return response

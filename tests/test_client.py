@@ -3,7 +3,9 @@
 import pytest
 import requests
 
+from dspace.bitstream import Bitstream
 from dspace.client import DSpaceClient
+from dspace.item import Item, MetadataEntry
 
 
 def test_client_instantiates_with_expected_values():
@@ -22,27 +24,39 @@ def test_client_repr():
     )
 
 
-def test_client_delete_method(my_vcr, vcr_env):
-    with my_vcr.use_cassette("tests/vcr_cassettes/bitstream/delete_bitstream.yaml"):
-        client = DSpaceClient(vcr_env["url"])
-        response = client.delete("/bitstreams/9df9382c-d332-4ddc-a77a-e8e6e3f1bcff")
+def test_client_delete_method(my_vcr, test_client, vcr_env, test_file_path_01):
+    with my_vcr.use_cassette("tests/vcr_cassettes/client/delete_bitstream.yaml"):
+        bitstream = Bitstream(
+            name="test-file-01.pdf",
+            description="A test PDF file",
+            file_path=test_file_path_01,
+        )
+        item = Item(
+            metadata=[
+                MetadataEntry(key="dc.title", value="Test Item for Bitstream"),
+                MetadataEntry(key="dc.contributor.author", value="Jane Doe. Author"),
+            ]
+        )
+        item.post(test_client, collection_handle=vcr_env["test_collection_handle"])
+        bitstream.post(test_client, item_handle=item.handle)
+        response = test_client.delete(f"/bitstreams/{bitstream.uuid}")
         assert isinstance(response, requests.Response)
         assert response.status_code == 200
 
 
 def test_client_get_method(my_vcr, vcr_env):
     with my_vcr.use_cassette("tests/vcr_cassettes/client/status.yaml"):
-        client = DSpaceClient(vcr_env["url"])
+        client = DSpaceClient(vcr_env["url"], verify=vcr_env["verify"])
         response = client.get("/status")
         assert isinstance(response, requests.Response)
 
 
 def test_client_get_object_by_handle(my_vcr, test_client, vcr_env):
     with my_vcr.use_cassette("tests/vcr_cassettes/client/get_object_by_handle.yaml"):
-        collection = test_client.get_object_by_handle("1721.1/130884").json()
-        assert collection["name"] == "Graduate Theses"
-        assert collection["type"] == "collection"
-        assert collection["uuid"] == "72dfcada-de27-4ce7-99cc-68266ebfd00c"
+        collection = test_client.get_object_by_handle(vcr_env["test_collection_handle"]).json()
+        assert collection["name"] == vcr_env["test_collection_name"]
+        assert collection["type"] == vcr_env["test_collection_type"]
+        assert collection["uuid"] == vcr_env["test_collection_uuid"]
 
 
 def test_client_get_object_by_handle_raises_error_if_doesnt_exist(
@@ -57,7 +71,7 @@ def test_client_get_object_by_handle_raises_error_if_doesnt_exist(
 
 def test_client_login(my_vcr, vcr_env):
     with my_vcr.use_cassette("tests/vcr_cassettes/client/login.yaml"):
-        client = DSpaceClient(vcr_env["url"])
+        client = DSpaceClient(vcr_env["url"], verify=vcr_env["verify"])
         assert "JSESSIONID" not in client.cookies
         client.login(vcr_env["email"], vcr_env["password"])
         assert "JSESSIONID" in client.cookies
@@ -65,14 +79,14 @@ def test_client_login(my_vcr, vcr_env):
 
 def test_client_login_raises_auth_error(my_vcr, vcr_env):
     with my_vcr.use_cassette("tests/vcr_cassettes/client/login_error.yaml"):
-        client = DSpaceClient(vcr_env["url"])
+        client = DSpaceClient(vcr_env["url"], verify=vcr_env["verify"])
         with pytest.raises(requests.HTTPError):
             client.login("fake_user@example.com", "fake_password")
 
 
 def test_client_post_method(my_vcr, vcr_env):
     with my_vcr.use_cassette("tests/vcr_cassettes/client/login.yaml"):
-        client = DSpaceClient(vcr_env["url"])
+        client = DSpaceClient(vcr_env["url"], verify=vcr_env["verify"])
         response = client.post(
             "/login", data={"email": vcr_env["email"], "password": vcr_env["password"]}
         )

@@ -1,4 +1,5 @@
 # test/conftest.py
+from distutils.util import strtobool
 import json
 import os
 import urllib
@@ -52,10 +53,10 @@ def my_vcr():
 
 @pytest.fixture
 def test_client(my_vcr, vcr_env):
-    with my_vcr.use_cassette("tests/vcr_cassettes/client/login.yaml"):
-        client = DSpaceClient(vcr_env["url"])
-        client.login(vcr_env["email"], vcr_env["password"])
-        return client
+    #with my_vcr.use_cassette("tests/vcr_cassettes/client/login.yaml"):
+    client = DSpaceClient(vcr_env["url"], verify=vcr_env["verify"])
+    client.login(vcr_env["email"], vcr_env["password"])
+    return client
 
 
 @pytest.fixture
@@ -75,12 +76,22 @@ def vcr_env():
             "url": os.environ["TEST_DSPACE_API_URL"],
             "email": os.environ["TEST_DSPACE_EMAIL"],
             "password": os.environ["TEST_DSPACE_PASSWORD"],
+            "verify": bool(strtobool(os.getenv("TEST_DSPACE_SSL_VERIFY", "True"))),
+            "test_collection_handle": os.getenv("TEST_DSPACE_COLLECTION_HANDLE", "1721.1/130884"),
+            "test_collection_uuid": os.getenv("TEST_DSPACE_COLLECTION_UUID", "72dfcada-de27-4ce7-99cc-68266ebfd00c"),
+            "test_collection_name": os.getenv("TEST_DSPACE_COLLECTION_NAME", "Graduate Theses"),
+            "test_collection_type": os.getenv("TEST_DSPACE_COLLECTION_TYPE", "collection"),
         }
     else:
         env = {
             "url": "https://dspace-example.com/rest",
             "email": "user@example.com",
             "password": "password",
+            "verify": True,
+            "test_collection_handle": "1721.1/130884",
+            "test_collection_uuid": "72dfcada-de27-4ce7-99cc-68266ebfd00c",
+            "test_collection_name": "Graduate Theses",
+            "test_collection_type": "collection",
         }
     return env
 
