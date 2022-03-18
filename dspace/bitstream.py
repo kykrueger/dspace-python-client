@@ -8,6 +8,7 @@ import logging
 from typing import Optional
 
 import smart_open
+import requests
 
 from dspace.client import DSpaceClient
 from dspace.errors import MissingFilePathError
@@ -75,7 +76,7 @@ class Bitstream:
     def delete(
         self,
         client: DSpaceClient,
-    ) -> None:
+    ) -> requests.Response:
         """Delete bitstream from DSpace and unset relevant bitstream attributes.
 
         Args:
@@ -101,6 +102,7 @@ class Bitstream:
         self.sequenceId = None
         self.sizeBytes = None
         self.uuid = None
+        return response
 
     def post(
         self,

@@ -10,6 +10,8 @@ from __future__ import annotations
 import logging
 from typing import Dict, List, Optional
 
+import requests
+
 from dspace.bitstream import Bitstream
 from dspace.client import DSpaceClient
 from dspace.utils import select_identifier
@@ -73,7 +75,7 @@ class Item:
         self.uuid = None
         self.withdrawn = None
 
-    def delete(self, client: DSpaceClient) -> None:
+    def delete(self, client: DSpaceClient) -> requests.Response:
         """Delete item from DSpace and unset relevant item attributes.
 
         Args:
@@ -96,6 +98,7 @@ class Item:
         self.parentCommunityList = None
         self.uuid = None
         self.withdrawn = None
+        return response
 
     def post(
         self,
